@@ -38,8 +38,10 @@ elif [[ -e /etc/centos-release || -e /etc/redhat-release ]]; then
 	GROUPNAME=nobody
 	RCLOCAL='/etc/rc.d/rc.local'
 else
-	echo "Looks like you aren't running this installer on Debian, Ubuntu or CentOS"
-	exit 5
+	mkdir /etc/centos-release
+	OS=centos
+	GROUPNAME=nobody
+	RCLOCAL='/etc/rc.d/rc.local'
 fi
 
 newclient () {
@@ -141,17 +143,19 @@ if [[ -e /etc/openvpn/server.conf ]]; then
 					firewall-cmd --direct --remove-rule ipv4 nat POSTROUTING 0 -s 10.0.2.0/24 ! -d 10.0.2.0/24 -j SNAT --to $IP
 					firewall-cmd --permanent --direct --remove-rule ipv4 nat POSTROUTING 0 -s 10.0.2.0/24 ! -d 10.0.2.0/24 -j SNAT --to $IP
 				else
-					IP=$(grep 'iptables -t nat -A POSTROUTING -s 10.0.2.0/24 ! -d 10.0.2.0/24 -j SNAT --to ' $RCLOCAL | cut -d " " -f 14)
-					iptables -t nat -D POSTROUTING -s 10.0.2.0/24 ! -d 10.0.2.0/24 -j SNAT --to $IP
-					sed -i '/iptables -t nat -A POSTROUTING -s 10.0.2.0\/24 ! -d 10.0.2.0\/24 -j SNAT --to /d' $RCLOCAL
-					if iptables -L -n | grep -qE '^ACCEPT'; then
-						iptables -D INPUT -p $PROTOCOL --dport $PORT -j ACCEPT
-						iptables -D FORWARD -s 10.0.2.0/24 -j ACCEPT
-						iptables -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-						sed -i "/iptables -I INPUT -p $PROTOCOL --dport $PORT -j ACCEPT/d" $RCLOCAL
-						sed -i "/iptables -I FORWARD -s 10.0.2.0\/24 -j ACCEPT/d" $RCLOCAL
-						sed -i "/iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT/d" $RCLOCAL
-					fi
+					#IP=$(grep 'iptables -t nat -A POSTROUTING -s 10.0.2.0/24 ! -d 10.0.2.0/24 -j SNAT --to ' $RCLOCAL | cut -d " " -f 14)
+					#iptables -t nat -D POSTROUTING -s 10.0.2.0/24 ! -d 10.0.2.0/24 -j SNAT --to $IP
+					#sed -i '/iptables -t nat -A POSTROUTING -s 10.0.2.0\/24 ! -d 10.0.2.0\/24 -j SNAT --to /d' $RCLOCAL
+					#if iptables -L -n | grep -qE '^ACCEPT'; then
+					#	iptables -D INPUT -p $PROTOCOL --dport $PORT -j ACCEPT
+					#	iptables -D FORWARD -s 10.0.2.0/24 -j ACCEPT
+				#		iptables -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+				#		sed -i "/iptables -I INPUT -p $PROTOCOL --dport $PORT -j ACCEPT/d" $RCLOCAL
+				#		sed -i "/iptables -I FORWARD -s 10.0.2.0\/24 -j ACCEPT/d" $RCLOCAL
+				#		sed -i "/iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT/d" $RCLOCAL
+				#	fi
+					iptables -t nat -A POSTROUTING -s 10.0.2.0/24 -o eth0 -j MASQUERADE
+					service iptables save
 				fi
 				if hash sestatus 2>/dev/null; then
 					if sestatus | grep "Current mode" | grep -qs "enforcing"; then
