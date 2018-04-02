@@ -154,7 +154,7 @@ if [[ -e /etc/openvpn/server.conf ]]; then
 				#		sed -i "/iptables -I FORWARD -s 10.0.2.0\/24 -j ACCEPT/d" $RCLOCAL
 				#		sed -i "/iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT/d" $RCLOCAL
 				#	fi
-					iptables -t nat -A POSTROUTING -s 10.0.2.0/24 -o eth0 -j MASQUERADE
+					iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -d 0.0.0.0/0 -o eth0 -j MASQUERADE
 					service iptables save
 				fi
 				if hash sestatus 2>/dev/null; then
