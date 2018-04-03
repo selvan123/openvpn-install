@@ -159,16 +159,16 @@ if [[ -e /etc/openvpn/server.conf ]]; then
     
     					 # Allow traffic initiated from VPN to access LAN
     iptables -I FORWARD -i tun0 -o eth0 \
-         -s 10.8.0.0/24 -d 192.168.0.0/24 \
+         -s 10.0.0.0/16 -d 10.0.2.0/24 \
          -m conntrack --ctstate NEW -j ACCEPT
 
     # Allow traffic initiated from VPN to access "the world"
     iptables -I FORWARD -i tun0 -o eth1 \
-         -s 10.8.0.0/24 -m conntrack --ctstate NEW -j ACCEPT
+         -s 10.0.0.0/16 -m conntrack --ctstate NEW -j ACCEPT
 
     # Allow traffic initiated from LAN to access "the world"
     iptables -I FORWARD -i eth0 -o eth1 \
-         -s 192.168.0.0/24 -m conntrack --ctstate NEW -j ACCEPT
+         -s 10.10.0.0/16 -m conntrack --ctstate NEW -j ACCEPT
 
     # Allow established traffic to pass back and forth
     iptables -I FORWARD -m conntrack --ctstate RELATED,ESTABLISHED \
@@ -179,11 +179,11 @@ if [[ -e /etc/openvpn/server.conf ]]; then
 
     # Masquerade traffic from VPN to "the world" -- done in the nat table
     iptables -t nat -I POSTROUTING -o eth1 \
-          -s 10.8.0.0/24 -j MASQUERADE
+          -s 10.0.0.0/16 -j MASQUERADE
 
     # Masquerade traffic from LAN to "the world"
     iptables -t nat -I POSTROUTING -o eth1 \
-          -s 192.168.0.0/24 -j MASQUERADE
+          -s 10.0.0.0/16 -j MASQUERADE
 	  
 					service iptables save
 				fi
@@ -300,7 +300,8 @@ dh dh.pem
 auth SHA512
 tls-auth ta.key 0
 topology subnet
-server 255.255.200.0 255.255.255.0
+server 10.0.0.1 255.255.255.0
+client-config-dir ccd
 ifconfig-pool-persist ipp.txt" > /etc/openvpn/server.conf
 	echo 'push "redirect-gateway def1 bypass-dhcp"' >> /etc/openvpn/server.conf
 	# DNS
